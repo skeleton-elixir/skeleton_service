@@ -2,7 +2,7 @@ defmodule SkeletonService.MixProject do
   use Mix.Project
 
   @version "1.0.0"
-  @url "https://github.com/diegonogueira/skeleton_service"
+  @url "https://github.com/skeleton-elixir/skeleton_service"
   @maintainers [
     "Diego Nogueira",
     "Jhonathas Matos"
