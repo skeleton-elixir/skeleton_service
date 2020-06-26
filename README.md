@@ -92,7 +92,7 @@ defmodule App.Accounts do
 end
 ```
 
-## Exemplo de chamdada do serviço
+## Exemplo de chamada do serviço
 
 ```elixir
 App.Accounts.create_user(%{
