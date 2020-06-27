@@ -36,8 +36,6 @@ defmodule Skeleton.Service do
     {:ok, service}
   end
 
-  def spawn_run({:error, _, _, _} = error, _fun), do: error
-
   def commit_transaction(multi, repo) do
     repo.transaction(multi)
   end
