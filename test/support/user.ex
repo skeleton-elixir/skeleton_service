@@ -7,8 +7,4 @@ defmodule Skeleton.Service.User do
 
     timestamps()
   end
-
-  def with_deleted do
-    {"users", Skeleton.Service.User}
-  end
 end
