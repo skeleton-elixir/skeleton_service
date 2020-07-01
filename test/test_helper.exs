@@ -7,17 +7,17 @@ defmodule Skeleton.Service.TestCase do
       import Ecto.Query
       import Ecto.Changeset
       alias Ecto.Adapters.SQL
-      alias Skeleton.Service.{Repo, UserCreate, User}
+      alias Skeleton.App.Repo
     end
   end
 
   setup do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Skeleton.Service.Repo)
-    Ecto.Adapters.SQL.Sandbox.mode(Skeleton.Service.Repo, {:shared, self()})
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Skeleton.App.Repo)
+    Ecto.Adapters.SQL.Sandbox.mode(Skeleton.App.Repo, {:shared, self()})
   end
 end
 
-Skeleton.Service.Repo.start_link()
-Ecto.Adapters.SQL.Sandbox.mode(Skeleton.Service.Repo, :manual)
+Skeleton.App.Repo.start_link()
+Ecto.Adapters.SQL.Sandbox.mode(Skeleton.App.Repo, :manual)
 
 ExUnit.start()

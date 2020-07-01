@@ -1,4 +1,4 @@
-defmodule Skeleton.Service.Repo.Migrations.CreateUsers do
+defmodule Skeleton.App.Repo.Migrations.CreateUsers do
   use Ecto.Migration
 
   def change do

@@ -1,5 +1,6 @@
-defmodule Skeleton.Service.UserCreate do
-  use Skeleton.Service.App, :service
+defmodule Skeleton.App.UserCreate do
+  use Skeleton.App.Service
+  alias Skeleton.App.{User, UserCreate}
 
   defstruct params: %{}
 

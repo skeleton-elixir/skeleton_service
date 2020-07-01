@@ -1,5 +1,6 @@
 defmodule Skeleton.ServiceTest do
   use Skeleton.Service.TestCase
+  alias Skeleton.App.{User, UserCreate}
 
   setup context do
     service = %UserCreate{
