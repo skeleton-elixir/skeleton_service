@@ -20,6 +20,7 @@ defmodule SkeletonService.MixProject do
       maintainers: @maintainers,
       description: "Elixir structure",
       start_permanent: Mix.env() == :prod,
+      aliases: aliases(),
       deps: deps()
     ]
   end
@@ -48,6 +49,16 @@ defmodule SkeletonService.MixProject do
       licenses: ["MIT"],
       links: %{github: @url},
       files: ~w(lib) ++ ~w(CHANGELOG.md LICENSE mix.exs README.md)
+    ]
+  end
+
+  defp aliases do
+    [
+      test: [
+        "ecto.create --quiet",
+        "ecto.migrate --quiet",
+        "test"
+      ]
     ]
   end
 end
