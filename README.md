@@ -7,6 +7,8 @@ atualizar perfil, login, logout etc.
 ## Instalação
 
 ```elixir
+# mix.exs
+
 def deps do
   [
     {:skeleton_service, "~> 1.3.0"}
@@ -14,9 +16,9 @@ def deps do
 end
 ```
 
-## Criando o serviço
-
 ```elixir
+# lib/service.ex
+
 defmodule App.Service do
   defmacro __using__(_) do
     quote do
@@ -28,9 +30,14 @@ defmodule App.Service do
 end
 ```
 
+## Criando os serviços
+
 ```elixir
+# lib/accounts/user/user_create.ex
+
 defmodule App.Accounts.UserCreate do
   use App.Service
+  
   alias App.User.Accounts.{
     UserCreate,
     UserSendConfirmationCode
@@ -77,9 +84,50 @@ end
 
 ```
 
+```elixir
+# lib/accounts/user/user_update.ex 
+
+defmodule App.Accounts.UserUpdate do
+  use App.Service
+  
+  alias App.Accounts.UserUpdate
+
+  @enforce_keys [:user, :params]
+  defstruct user: nil, params: nil
+
+  def perform(%UserUpdate{} = service) do
+    service
+    |> begin_transaction()
+    |> run(:changeset, &changeset/1)
+    |> run(:updated_user, &update_user/1)
+    |> commit_transaction()
+    |> return(:updated_user)
+  end
+
+  # Changeset
+
+  defp changeset(service) do
+    changeset =
+      service.user
+      |> cast(service.params, [:name])
+      |> validate_required([:name])
+
+    {:ok, changeset}
+  end
+
+  # Update User
+
+  defp update_user(service) do
+    Repo.update(service.changeset)
+  end
+end
+```
+
 ## Criando o contexto
 
 ```elixir
+# lib/accounts/accounts.ex
+
 defmodule App.Accounts do
   alias App.Accounts.UserCreate
 
@@ -89,15 +137,30 @@ defmodule App.Accounts do
     }
     |> UserCreate.perform()
   end
+  
+  def update_user(user, params) do
+    %UserUpdate{
+      user: user,
+      params: params,
+    }
+    |> UserUpdate.perform()
+  end
 end
 ```
 
-## Exemplo de chamada do serviço
+## Exemplos de chamada dos serviços
 
 ```elixir
 App.Accounts.create_user(%{
   params: %{
     email: "email@example.com"
+  }
+})
+
+App.Accounts.update_user(%{
+  user: user,
+  params: %{
+    name: "Updated name"
   }
 })
 ```
