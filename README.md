@@ -17,7 +17,7 @@ end
 ```
 
 ```elixir
-# lib/service.ex
+# lib/app/service.ex
 
 defmodule App.Service do
   defmacro __using__(_) do
@@ -33,7 +33,7 @@ end
 ## Criando os serviços
 
 ```elixir
-# lib/accounts/user/user_create.ex
+# lib/app/accounts/user/user_create.ex
 
 defmodule App.Accounts.UserCreate do
   use App.Service
@@ -85,7 +85,7 @@ end
 ```
 
 ```elixir
-# lib/accounts/user/user_update.ex
+# lib/app/accounts/user/user_update.ex
 
 defmodule App.Accounts.UserUpdate do
   use App.Service
@@ -126,7 +126,7 @@ end
 ## Criando o contexto
 
 ```elixir
-# lib/accounts/accounts.ex
+# lib/app/accounts/accounts.ex
 
 defmodule App.Accounts do
   alias App.Accounts.UserCreate
