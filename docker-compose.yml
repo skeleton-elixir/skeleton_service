@@ -10,7 +10,6 @@ services:
       POSTGRES_HOST: postgres
       POSTGRES_USERNAME: postgres
       POSTGRES_PASSWORD: 123456
-      MIX_ENV: test
     volumes:
       - .:/app:cached
 

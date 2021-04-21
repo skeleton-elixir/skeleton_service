@@ -9,7 +9,7 @@ atualizar perfil, login, logout etc.
 ```elixir
 def deps do
   [
-    {:skeleton_service, github: "skeleton-elixir/skeleton_service"},
+    {:skeleton_service, "~> 1.3.0"}
   ]
 end
 ```

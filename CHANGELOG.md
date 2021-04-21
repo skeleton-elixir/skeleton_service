@@ -1,3 +1,8 @@
+1.3.0
+------
+#### Changes
+* Remove MIX_ENV enviroment from Docker.
+
 1.2.0
 ------
 #### Changes
