@@ -11,7 +11,7 @@ atualizar perfil, login, logout etc.
 
 def deps do
   [
-    {:skeleton_service, "~> 1.3.0"}
+    {:skeleton_service, "~> 1.3.1"}
   ]
 end
 ```
@@ -37,7 +37,7 @@ end
 
 defmodule App.Accounts.UserCreate do
   use App.Service
-  
+
   alias App.User.Accounts.{
     UserCreate,
     UserSendConfirmationCode
@@ -85,11 +85,11 @@ end
 ```
 
 ```elixir
-# lib/accounts/user/user_update.ex 
+# lib/accounts/user/user_update.ex
 
 defmodule App.Accounts.UserUpdate do
   use App.Service
-  
+
   alias App.Accounts.UserUpdate
 
   @enforce_keys [:user, :params]
@@ -137,7 +137,7 @@ defmodule App.Accounts do
     }
     |> UserCreate.perform()
   end
-  
+
   def update_user(user, params) do
     %UserUpdate{
       user: user,

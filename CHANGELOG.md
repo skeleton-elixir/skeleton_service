@@ -1,3 +1,8 @@
+1.3.1
+------
+#### Changes
+* Updated README.md.
+
 1.3.0
 ------
 #### Changes
