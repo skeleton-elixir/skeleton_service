@@ -47,7 +47,7 @@ defmodule SkeletonService.MixProject do
     criar uma conta de usuário, atualizar perfil, login, logout etc."
   end
 
-  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(:test), do: ["lib", "test/skeleton/app"]
   defp elixirc_paths(_), do: ["lib"]
 
   defp package do

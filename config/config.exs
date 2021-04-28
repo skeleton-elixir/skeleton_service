@@ -2,8 +2,9 @@ use Mix.Config
 
 config :skeleton_service, ecto_repos: [Skeleton.App.Repo]
 
+config :skeleton_service, Skeleton.App.Service, repo: Skeleton.App.Repo
+
 config :skeleton_service, Skeleton.App.Repo,
-  adapter: Ecto.Adapters.Postgres,
   pool: Ecto.Adapters.SQL.Sandbox,
   hostname: System.get_env("POSTGRES_HOST", "localhost"),
   database: "skeleton_service_test",

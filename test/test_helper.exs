@@ -6,7 +6,6 @@ defmodule Skeleton.Service.TestCase do
       use ExUnit.Case, unquote(opts)
       import Ecto.Query
       import Ecto.Changeset
-      alias Ecto.Adapters.SQL
       alias Skeleton.App.Repo
     end
   end

@@ -10,6 +10,20 @@ defmodule Skeleton.App do
     end
   end
 
+  def service do
+    quote do
+      import Skeleton.App.Service
+      import Ecto.{Changeset, Query}
+      alias Skeleton.App.{Repo, User, UserCreate}
+    end
+  end
+
+  def migration do
+    quote do
+      use Ecto.Migration
+    end
+  end
+
   defmacro __using__(which) when is_atom(which) do
     apply(__MODULE__, which, [])
   end

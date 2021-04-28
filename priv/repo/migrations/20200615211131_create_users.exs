@@ -1,5 +1,5 @@
 defmodule Skeleton.App.Repo.Migrations.CreateUsers do
-  use Ecto.Migration
+  use Skeleton.App, :migration
 
   def change do
     create table(:users, primary_key: false) do

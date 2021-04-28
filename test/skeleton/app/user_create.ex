@@ -1,5 +1,5 @@
 defmodule Skeleton.App.UserCreate do
-  use Skeleton.App.Service
+  use Skeleton.App, :service
   alias Skeleton.App.{User, UserCreate}
 
   defstruct params: %{}
@@ -9,6 +9,7 @@ defmodule Skeleton.App.UserCreate do
     |> begin_transaction()
     |> run(:changeset, &changeset/1)
     |> run(:user, &create_user/1)
+    |> add_info()
     |> commit_transaction()
     |> run(&update_user/1)
     |> return(:user)

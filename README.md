@@ -4,7 +4,7 @@ O Skeleton Service é um facilitador para criação de serviços em sua aplicaç
 Um serviço nada mais é do que uma ação ou evento que sua aplicaçao executa, por exemplo: criar uma conta de usuário,
 atualizar perfil, login, logout etc.
 
-## Instalação
+## Instalação e configuração
 
 ```elixir
 # mix.exs
@@ -17,15 +17,40 @@ end
 ```
 
 ```elixir
+# config.exs
+
+config :app, App.Service, repo: App.Repo
+```
+
+```elixir
+# lib/app.ex
+
+defmodule App do
+  # ...
+
+  def service do
+    quote do
+      import App.Service
+      import Ecto.{Changeset, Query}
+      alias App.{Repo, User, UserCreate}
+    end
+  end
+
+  # ...
+end
+```
+
+```elixir
 # lib/app/service.ex
 
 defmodule App.Service do
-  defmacro __using__(_) do
-    quote do
-      use Skeleton.Service, repo: App.Repo
-      import Ecto.{Changeset, Query}
-      alias App.Repo
-    end
+  use Skeleton.Service, otp_app: :app
+
+  # You can create your functions
+  def my_custom_function(multi) do
+    run(multi, :info, fn _service ->
+      {:ok, "INFO"}
+    end)
   end
 end
 ```
@@ -36,7 +61,7 @@ end
 # lib/app/accounts/user/user_create.ex
 
 defmodule App.Accounts.UserCreate do
-  use App.Service
+  use App, :service
 
   alias App.User.Accounts.{
     UserCreate,
@@ -50,6 +75,7 @@ defmodule App.Accounts.UserCreate do
     |> begin_transaction()
     |> run(:changeset, &changeset/1)
     |> run(:user, &create_user/1)
+    |> my_custom_function()
     |> commit_transaction()
     |> run(&send_confirmation_code/1)
     |> return(:user)
@@ -88,7 +114,7 @@ end
 # lib/app/accounts/user/user_update.ex
 
 defmodule App.Accounts.UserUpdate do
-  use App.Service
+  use App, :service
 
   alias App.Accounts.UserUpdate
 
@@ -100,7 +126,7 @@ defmodule App.Accounts.UserUpdate do
     |> begin_transaction()
     |> run(:changeset, &changeset/1)
     |> run(:updated_user, &update_user/1)
-    |> commit_transaction()
+    |> commit_transaction(App.OtherRepo)
     |> return(:updated_user)
   end
 

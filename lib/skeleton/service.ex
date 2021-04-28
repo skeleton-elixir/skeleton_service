@@ -2,16 +2,26 @@ defmodule Skeleton.Service do
   alias Ecto.Multi
 
   defmacro __using__(opts \\ []) do
-    alias Skeleton.Service, as: Serv
+    alias Skeleton.Service
+    alias Skeleton.Service.Config
 
     quote do
+      @module __MODULE__
+      @otp_app unquote(opts[:otp_app]) || raise("Required otp_app")
       @repo unquote(opts[:repo])
 
-      def begin_transaction(service), do: Serv.begin_transaction(service)
-      def run(multi, name, fun), do: Serv.run(multi, name, fun)
-      def run(result, fun), do: Serv.run(result, fun)
-      def commit_transaction(multi), do: Serv.commit_transaction(multi, @repo)
-      def return(result, resource_name), do: Serv.return(result, resource_name)
+      def begin_transaction(service), do: Service.begin_transaction(service)
+      def run(multi, name, fun), do: Service.run(multi, name, fun)
+      def run(result, fun), do: Service.run(result, fun)
+
+      def commit_transaction(multi, repo \\ @repo) do
+        Service.commit_transaction(
+          multi,
+          repo || Config.repo(@otp_app, @module) || raise("Required Repo")
+        )
+      end
+
+      def return(result, resource_name), do: Service.return(result, resource_name)
     end
   end
 
@@ -26,7 +36,9 @@ defmodule Skeleton.Service do
   end
 
   def run(multi, name, fun) do
-    Multi.run(multi, name, fn _repo, service -> fun.(service) end)
+    Multi.run(multi, name, fn _repo, service ->
+      fun.(service)
+    end)
   end
 
   def run({:error, _, _, _} = error, _fun), do: error
