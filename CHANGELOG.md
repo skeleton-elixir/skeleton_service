@@ -1,3 +1,8 @@
+3.0.0
+------
+#### Changes
+* Simplify service usage
+
 2.0.0
 ------
 #### Changes

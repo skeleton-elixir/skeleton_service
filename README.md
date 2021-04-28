@@ -11,13 +11,13 @@ atualizar perfil, login, logout etc.
 
 def deps do
   [
-    {:skeleton_service, "~> 2.0.0"}
+    {:skeleton_service, "~> 3.0.0"}
   ]
 end
 ```
 
 ```elixir
-# config.exs
+# config/config.exs
 
 config :skeleton_service, repo: App.Repo # Default repo
 ```
