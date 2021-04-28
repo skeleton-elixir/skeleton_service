@@ -7,20 +7,12 @@ defmodule Skeleton.Service do
 
     quote do
       @module __MODULE__
-      @otp_app unquote(opts[:otp_app]) || raise("Required otp_app")
-      @repo unquote(opts[:repo])
+      @repo unquote(opts[:repo]) || Config.repo() || raise("Repo required")
 
       def begin_transaction(service), do: Service.begin_transaction(service)
       def run(multi, name, fun), do: Service.run(multi, name, fun)
       def run(result, fun), do: Service.run(result, fun)
-
-      def commit_transaction(multi, repo \\ @repo) do
-        Service.commit_transaction(
-          multi,
-          repo || Config.repo(@otp_app, @module) || raise("Required Repo")
-        )
-      end
-
+      def commit_transaction(multi), do: Service.commit_transaction(multi, @repo)
       def return(result, resource_name), do: Service.return(result, resource_name)
     end
   end

@@ -2,7 +2,7 @@ use Mix.Config
 
 config :skeleton_service, ecto_repos: [Skeleton.App.Repo]
 
-config :skeleton_service, Skeleton.App.Service, repo: Skeleton.App.Repo
+config :skeleton_service, repo: Skeleton.App.Repo
 
 config :skeleton_service, Skeleton.App.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,

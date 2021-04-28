@@ -2,9 +2,9 @@ defmodule Skeleton.Service.ConfigTest do
   use Skeleton.Service.TestCase
 
   alias Skeleton.Service.Config
-  alias Skeleton.App.{Repo, Service}
+  alias Skeleton.App.Repo
 
   test "returns repo from config.exs" do
-    assert Config.repo(:skeleton_service, Service) == Repo
+    assert Config.repo() == Repo
   end
 end
