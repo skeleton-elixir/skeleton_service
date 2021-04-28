@@ -11,7 +11,7 @@ atualizar perfil, login, logout etc.
 
 def deps do
   [
-    {:skeleton_service, "~> 1.3.1"}
+    {:skeleton_service, "~> 2.0.0"}
   ]
 end
 ```
