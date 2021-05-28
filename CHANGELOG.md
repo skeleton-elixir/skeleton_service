@@ -1,3 +1,8 @@
+3.1.0
+------
+#### Changes
+* Added repo opts support on commit_transaction
+
 3.0.0
 ------
 #### Changes
