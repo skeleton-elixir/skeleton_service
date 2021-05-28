@@ -17,8 +17,6 @@ services:
     image: postgres:13.0
     environment:
       POSTGRES_PASSWORD: 123456
-    ports:
-      - 5432:5432
     volumes:
       - postgres_volume:/var/lib/postgresql/data
 
