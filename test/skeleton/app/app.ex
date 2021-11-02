@@ -1,4 +1,6 @@
 defmodule Skeleton.App do
+  @moduledoc false
+
   def schema do
     quote do
       use Ecto.Schema

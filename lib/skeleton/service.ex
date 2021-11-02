@@ -1,4 +1,8 @@
 defmodule Skeleton.Service do
+  @moduledoc """
+  Skeleton Service module
+  """
+
   alias Ecto.Multi
 
   defmacro __using__(opts \\ []) do

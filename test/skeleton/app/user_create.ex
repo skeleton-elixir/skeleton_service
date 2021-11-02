@@ -1,4 +1,6 @@
 defmodule Skeleton.App.UserCreate do
+  @moduledoc false
+
   use Skeleton.App.Service
 
   alias Skeleton.App.{User, UserCreate}

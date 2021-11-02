@@ -1,4 +1,6 @@
 defmodule Skeleton.App.User do
+  @moduledoc false
+
   use Skeleton.App, :schema
 
   schema "users" do

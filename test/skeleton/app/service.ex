@@ -1,4 +1,6 @@
 defmodule Skeleton.App.Service do
+  @moduledoc false
+
   import Skeleton.Service
 
   defmacro __using__(opts) do
