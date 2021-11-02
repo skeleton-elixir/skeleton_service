@@ -56,14 +56,11 @@ end
 defmodule App.Accounts.UserCreate do
   use App.Service
 
-  alias App.User.Accounts.{
-    UserCreate,
-    UserSendConfirmationCode
-  }
+  alias App.User.Accounts
 
   defstruct params: %{}
 
-  def perform(%UserCreate{} = service) do
+  def perform(%__MODULE__{} = service) do
     service
     |> begin_transaction()
     |> run(:changeset, &changeset/1)
@@ -78,7 +75,7 @@ defmodule App.Accounts.UserCreate do
 
   defp changeset(service) do
     changeset =
-      %User{}
+      %Accounts.User{}
       |> cast(service.params, [:email])
       |> validate_required([:email])
 
@@ -94,10 +91,7 @@ defmodule App.Accounts.UserCreate do
   # Send confirmation code
 
   defp send_confirmation_code(service) do
-    %UserSendConfirmationCode{
-      resource: service.user
-    }
-    |> UserSendConfirmationCode.perform()
+    Accounts.send_user_confirmation_code(service.user)
   end
 end
 
@@ -109,12 +103,12 @@ end
 defmodule App.Accounts.UserUpdate do
   use App.Service, repo: App.Repo # Override the default Repo
 
-  alias App.Accounts.UserUpdate
+  alias App.Accounts
 
   @enforce_keys [:user, :params]
   defstruct user: nil, params: nil
 
-  def perform(%UserUpdate{} = service) do
+  def perform(%__MODULE__{} = service) do
     service
     |> begin_transaction()
     |> run(:changeset, &changeset/1)
@@ -148,21 +142,28 @@ end
 # lib/app/accounts/accounts.ex
 
 defmodule App.Accounts do
-  alias App.Accounts.UserCreate
+  alias App.Accounts
 
   def create_user(params) do
-    %UserCreate{
-      params: params,
+    %Accounts.UserCreate{
+      params: params
     }
-    |> UserCreate.perform()
+    |> Accounts.UserCreate.perform()
   end
 
   def update_user(user, params) do
-    %UserUpdate{
+    %Accounts.UserUpdate{
       user: user,
-      params: params,
+      params: params
     }
-    |> UserUpdate.perform()
+    |> Accounts.UserUpdate.perform()
+  end
+
+  def send_user_confirmation_code(user) do
+    %UserSendConfirmationCode{
+      user: user
+    }
+    |> UserSendConfirmationCode.perform()
   end
 end
 ```
@@ -171,15 +172,10 @@ end
 
 ```elixir
 App.Accounts.create_user(%{
-  params: %{
-    email: "email@example.com"
-  }
+  email: "email@example.com"
 })
 
-App.Accounts.update_user(%{
-  user: user,
-  params: %{
-    name: "Updated name"
-  }
+App.Accounts.update_user(user, %{
+  name: "Updated name"
 })
 ```

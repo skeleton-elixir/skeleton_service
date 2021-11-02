@@ -3,11 +3,11 @@ defmodule Skeleton.App.UserCreate do
 
   use Skeleton.App.Service
 
-  alias Skeleton.App.{User, UserCreate}
+  alias Skeleton.App.User
 
   defstruct params: %{}
 
-  def perform(%UserCreate{} = service) do
+  def perform(%__MODULE__{} = service) do
     service
     |> begin_transaction()
     |> run(:changeset, &changeset/1)
