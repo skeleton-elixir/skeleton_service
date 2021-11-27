@@ -61,25 +61,16 @@ defmodule Skeleton.Service do
   end
 
   def commit_transaction(multi, repo, opts) do
-    result = repo.transaction(multi, opts)
-
-    cond do
-      elem(result, 0) == :ok && elem(result, 1).queue_started_here? ->
-        Server.perform(self())
-      elem(result, 0) == :error && elem(result, 3).queue_started_here? ->
-        Server.stop(self())
-      true ->
-        nil
-    end
-
-    result
+    repo.transaction(multi, opts)
   end
 
-  def return({:error, _, changeset, _}, _resource_name) do
+  def return({:error, _, changeset, service}, _resource_name) do
+    if service.queue_started_here?, do: Server.stop(self())
     {:error, changeset}
   end
 
   def return({:ok, service}, resource_name) do
+    if service.queue_started_here?, do: Server.perform(self())
     {:ok, Map.get(service, resource_name)}
   end
 end
