@@ -3,6 +3,7 @@ defmodule Skeleton.Service do
   Skeleton Service module
   """
 
+  alias Skeleton.Service.Server
   alias Ecto.Multi
 
   defmacro __using__(opts \\ []) do
@@ -16,18 +17,28 @@ defmodule Skeleton.Service do
       def begin_transaction(service), do: Service.begin_transaction(service)
       def run(multi, name, fun), do: Service.run(multi, name, fun)
       def run(result, fun), do: Service.run(result, fun)
-      def commit_transaction(multi, opts \\ []), do: Service.commit_transaction(multi, @repo, opts)
+      def enqueue(result, fun), do: Service.enqueue(result, fun)
+
+      def commit_transaction(multi, opts \\ []),
+        do: Service.commit_transaction(multi, @repo, opts)
+
       def return(result, resource_name), do: Service.return(result, resource_name)
     end
   end
 
   def begin_transaction(service) do
+    {queue_pid, started_here?} =
+      case Server.start_link(self()) do
+        {:ok, pid} -> {pid, true}
+        {:error, {_, pid}} -> {pid, false}
+      end
+
     service
     |> Map.from_struct()
+    |> Map.put(:queue_pid, queue_pid)
+    |> Map.put(:queue_started_here?, started_here?)
     |> Enum.reduce(Multi.new(), fn {key, value}, acc ->
-      run(acc, key, fn _changes ->
-        {:ok, value}
-      end)
+      run(acc, key, fn _changes -> {:ok, value} end)
     end)
   end
 
@@ -44,11 +55,29 @@ defmodule Skeleton.Service do
     {:ok, service}
   end
 
-  def commit_transaction(multi, repo, opts) do
-    repo.transaction(multi, opts)
+  def enqueue({:ok, service}, fun) do
+    Server.enqueue_task(self(), fun.(service))
+    {:ok, service}
   end
 
-  def return({:error, _, changeset, _}, _resource_name), do: {:error, changeset}
+  def commit_transaction(multi, repo, opts) do
+    result = repo.transaction(multi, opts)
+
+    cond do
+      elem(result, 0) == :ok && elem(result, 1).queue_started_here? ->
+        Server.perform(self())
+      elem(result, 0) == :error && elem(result, 3).queue_started_here? ->
+        Server.stop(self())
+      true ->
+        nil
+    end
+
+    result
+  end
+
+  def return({:error, _, changeset, _}, _resource_name) do
+    {:error, changeset}
+  end
 
   def return({:ok, service}, resource_name) do
     {:ok, Map.get(service, resource_name)}
