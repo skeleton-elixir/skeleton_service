@@ -3,7 +3,7 @@ defmodule Skeleton.Service do
   Skeleton Service module
   """
 
-  alias Skeleton.Service.Server
+  alias Skeleton.Service.TaskQueue
   alias Ecto.Multi
 
   defmacro __using__(opts \\ []) do
@@ -28,7 +28,7 @@ defmodule Skeleton.Service do
 
   def begin_transaction(service) do
     {queue_pid, started_here?} =
-      case Server.start_link(self()) do
+      case TaskQueue.start_link(self()) do
         {:ok, pid} -> {pid, true}
         {:error, {_, pid}} -> {pid, false}
       end
@@ -56,7 +56,7 @@ defmodule Skeleton.Service do
   end
 
   def enqueue({:ok, service}, fun) do
-    Server.enqueue_task(self(), fun.(service))
+    TaskQueue.enqueue(self(), fun.(service))
     {:ok, service}
   end
 
@@ -69,7 +69,7 @@ defmodule Skeleton.Service do
   end
 
   def return({:ok, service}, resource_name) do
-    if service.queue_started_here?, do: Server.perform(self())
+    if service.queue_started_here?, do: TaskQueue.perform(self())
     {:ok, Map.get(service, resource_name)}
   end
 end
