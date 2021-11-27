@@ -8,8 +8,6 @@ defmodule Skeleton.Service.Server do
   end
 
   def init(state) do
-    Process.send_after(self(), {:kill_if_not_alive, state.external_pid}, 5_000)
-
     {:ok, state}
   end
 
@@ -23,18 +21,6 @@ defmodule Skeleton.Service.Server do
     external_pid
     |> pid_parser()
     |> GenServer.call(:perform)
-  end
-
-  def stop(external_pid) do
-    external_pid
-    |> pid_parser()
-    |> GenServer.stop(:normal, :infinity)
-  end
-
-  def get_state(external_pid) do
-    external_pid
-    |> pid_parser()
-    |> GenServer.call(:get_state)
   end
 
   # Handles
@@ -52,19 +38,6 @@ defmodule Skeleton.Service.Server do
     end)
 
     {:stop, :normal, state, []}
-  end
-
-  def handle_call(:get_state, _from, state) do
-    {:reply, state, state}
-  end
-
-  def handle_info({:kill_if_not_alive, parent_pid}, state) do
-    if Process.alive?(parent_pid) do
-      Process.send_after(self(), {:kill_if_not_alive, parent_pid}, 5_000)
-      {:noreply, state}
-    else
-      {:stop, :normal, state}
-    end
   end
 
   # Helpers
