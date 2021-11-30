@@ -1,37 +1,31 @@
 defmodule Skeleton.Service.TaskQueue do
   use Agent
 
-  @type task_definition :: {module(), function_name :: atom(), args :: any()}
-
-  @spec start_link(pid()) :: {:ok, pid()} | {:error, any()}
-  def start_link(external_pid) do
-    Agent.start_link(fn -> [] end, name: name(external_pid))
+  @spec start_link() :: {:ok, pid()} | {:error, any()}
+  def start_link() do
+    Agent.start_link(fn -> [] end, name: name())
   end
 
-  @spec enqueue(pid(), task_definition()) :: :ok
-  def enqueue(external_pid, task) do
-    external_pid
-    |> name()
-    |> Agent.update(&Enum.concat(&1, [task]))
+  @spec enqueue(function(), struct()) :: :ok
+  def enqueue(fun, service) do
+    Agent.update(name(), &(&1 ++ [{fun, service}]))
   end
 
-  @spec tasks(pid()) :: [task_definition()]
-  def tasks(external_pid) do
-    external_pid
-    |> name()
-    |> Agent.get(& &1)
+  @spec tasks() :: [{function(), struct()}]
+  def tasks() do
+    Agent.get(name(), & &1)
   end
 
-  @spec perform(pid()) :: :ok
-  def perform(external_pid) do
-    external_pid
-    |> tasks()
-    |> Enum.each(fn {module, function, params} ->
-      apply(module, function, params)
+  @spec perform() :: :ok
+  def perform() do
+    Enum.each(tasks(), fn {fun, service} ->
+      fun.(service)
     end)
+
+    Agent.stop(name())
   end
 
-  defp name(pid) do
-    String.to_atom("task_queue_for_#{inspect(pid)}")
+  defp name() do
+    String.to_atom("task_queue_for_#{inspect(self())}")
   end
 end

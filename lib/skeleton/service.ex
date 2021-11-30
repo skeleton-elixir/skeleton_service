@@ -14,7 +14,7 @@ defmodule Skeleton.Service do
       @module __MODULE__
       @repo unquote(opts[:repo]) || Config.repo() || raise("Repo required")
 
-      def begin_transaction(service), do: Service.begin_transaction(service)
+      def begin_transaction(service), do: Service.begin_transaction(service, @module)
       def run(multi, name, fun), do: Service.run(multi, name, fun)
       def run(result, fun), do: Service.run(result, fun)
       def enqueue(result, fun), do: Service.enqueue(result, fun)
@@ -26,12 +26,8 @@ defmodule Skeleton.Service do
     end
   end
 
-  def begin_transaction(service) do
-    {queue_pid, started_here?} =
-      case TaskQueue.start_link(self()) do
-        {:ok, pid} -> {pid, true}
-        {:error, {_, pid}} -> {pid, false}
-      end
+  def begin_transaction(service, _module) do
+    {queue_pid, started_here?} = task_queue_start()
 
     service
     |> Map.from_struct()
@@ -56,9 +52,11 @@ defmodule Skeleton.Service do
   end
 
   def enqueue({:ok, service}, fun) do
-    TaskQueue.enqueue(self(), fun.(service))
+    TaskQueue.enqueue(fun, service)
     {:ok, service}
   end
+
+  def enqueue({:error, _, _, _} = error, _fun), do: error
 
   def commit_transaction(multi, repo, opts) do
     repo.transaction(multi, opts)
@@ -69,7 +67,14 @@ defmodule Skeleton.Service do
   end
 
   def return({:ok, service}, resource_name) do
-    if service.queue_started_here?, do: TaskQueue.perform(self())
+    if service.queue_started_here?, do: TaskQueue.perform()
     {:ok, Map.get(service, resource_name)}
+  end
+
+  defp task_queue_start() do
+    case TaskQueue.start_link() do
+      {:ok, pid} -> {pid, true}
+      {:error, {_, pid}} -> {pid, false}
+    end
   end
 end

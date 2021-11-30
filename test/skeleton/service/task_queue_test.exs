@@ -4,7 +4,7 @@ defmodule Skeleton.Service.TaskQueueTest do
   alias Skeleton.Service.TaskQueue
 
   setup ctx do
-    {:ok, pid} = TaskQueue.start_link(self())
+    {:ok, pid} = TaskQueue.start_link()
 
     ctx
     |> Map.put(:pid, pid)
@@ -12,32 +12,49 @@ defmodule Skeleton.Service.TaskQueueTest do
 
   test "tasks" do
     tasks_to_perform = [
-      {__MODULE__, :function_to_run, [1]},
-      {__MODULE__, :function_to_run, [2]},
+      {&__MODULE__.function_to_run/1, %{a: 1}},
+      {&__MODULE__.function_to_run/1, %{a: 2}},
     ]
 
-    TaskQueue.enqueue(self(), List.first(tasks_to_perform))
-    TaskQueue.enqueue(self(), List.last(tasks_to_perform))
+    TaskQueue.enqueue(
+      tasks_to_perform |> List.first() |> elem(0),
+      tasks_to_perform |> List.first() |> elem(1)
+    )
 
-    assert TaskQueue.tasks(self()) == tasks_to_perform
+    TaskQueue.enqueue(
+      tasks_to_perform |> List.last() |> elem(0),
+      tasks_to_perform |> List.last() |> elem(1)
+    )
+
+    assert TaskQueue.tasks() == tasks_to_perform
   end
 
   test "enqueue" do
     tasks_to_perform = [
-      {__MODULE__, :function_to_run, [1]},
-      {__MODULE__, :function_to_run, [2]},
+      {&__MODULE__.function_to_run/1, %{a: 1}},
+      {&__MODULE__.function_to_run/1, %{a: 2}},
     ]
 
-    TaskQueue.enqueue(self(), List.first(tasks_to_perform))
-    TaskQueue.enqueue(self(), List.last(tasks_to_perform))
+    TaskQueue.enqueue(
+      tasks_to_perform |> List.first() |> elem(0),
+      tasks_to_perform |> List.first() |> elem(1)
+    )
 
-    assert TaskQueue.tasks(self()) == tasks_to_perform
+    TaskQueue.enqueue(
+      tasks_to_perform |> List.last() |> elem(0),
+      tasks_to_perform |> List.last() |> elem(1)
+    )
+
+    assert TaskQueue.tasks() == tasks_to_perform
   end
 
   test "perform" do
-    TaskQueue.enqueue(self(), {__MODULE__, :function_to_run, [1]})
-    :ok = TaskQueue.perform(self())
+    TaskQueue.enqueue(&__MODULE__.function_to_run/1, %{a: 1})
+    TaskQueue.enqueue(&__MODULE__.function_to_run/1, %{a: 2})
 
+    :ok = TaskQueue.perform()
+
+    assert_received :task_performed
     assert_received :task_performed
   end
 
