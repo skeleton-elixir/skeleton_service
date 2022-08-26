@@ -26,6 +26,6 @@ defmodule Skeleton.Service.TaskQueue do
   end
 
   defp name() do
-    String.to_atom("task_queue_for_#{inspect(self())}")
+    {:global, "task_queue_for_#{inspect(self())}"}
   end
 end
