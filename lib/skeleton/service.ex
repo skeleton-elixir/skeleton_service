@@ -62,8 +62,8 @@ defmodule Skeleton.Service do
     repo.transaction(multi, opts)
   end
 
-  def return({:error, _, changeset, _service}, _resource_name) do
-    TaskQueue.stop()
+  def return({:error, _, changeset, service}, _resource_name) do
+    if service.queue_started_here?, do: TaskQueue.stop()
     {:error, changeset}
   end
 
