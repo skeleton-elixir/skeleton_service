@@ -6,6 +6,11 @@ defmodule Skeleton.Service.TaskQueue do
     Agent.start_link(fn -> [] end, name: name())
   end
 
+  @spec stop() :: :ok
+  def stop do
+    Agent.stop(name())
+  end
+
   @spec enqueue(function(), struct()) :: :ok
   def enqueue(fun, service) do
     Agent.update(name(), &(&1 ++ [{fun, service}]))
@@ -22,7 +27,7 @@ defmodule Skeleton.Service.TaskQueue do
       fun.(service)
     end)
 
-    Agent.stop(name())
+    stop()
   end
 
   defp name() do

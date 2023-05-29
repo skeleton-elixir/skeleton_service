@@ -63,6 +63,7 @@ defmodule Skeleton.Service do
   end
 
   def return({:error, _, changeset, _service}, _resource_name) do
+    TaskQueue.stop()
     {:error, changeset}
   end
 
