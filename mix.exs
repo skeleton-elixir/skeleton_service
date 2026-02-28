@@ -1,7 +1,7 @@
 defmodule SkeletonService.MixProject do
   use Mix.Project
 
-  @version "3.1.0"
+  @version "4.0.0"
   @source_url "https://github.com/skeleton-elixir/skeleton_service"
   @maintainers [
     "Diego Nogueira",
@@ -13,7 +13,7 @@ defmodule SkeletonService.MixProject do
       name: "SkeletonService",
       app: :skeleton_service,
       version: @version,
-      elixir: "~> 1.8",
+      elixir: "~> 1.15",
       elixirc_paths: elixirc_paths(Mix.env()),
       package: package(),
       source_url: @source_url,
@@ -35,10 +35,10 @@ defmodule SkeletonService.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
-      {:ecto_sql, "~> 3.0"},
-      {:postgrex, ">= 0.0.0", only: :test},
-      {:credo, "~> 1.5", only: [:dev, :test], runtime: false}
+      {:ex_doc, "~> 0.34", only: :dev, runtime: false},
+      {:ecto_sql, "~> 3.12"},
+      {:postgrex, "~> 0.19", only: :test},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
     ]
   end
 

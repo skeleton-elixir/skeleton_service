@@ -1,3 +1,2 @@
-erlang 24.1.4
-elixir 1.12.3-otp-24
-postgres 14.0
+erlang 28.2
+elixir 1.19.4

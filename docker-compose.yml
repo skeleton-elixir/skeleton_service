@@ -1,24 +1,46 @@
-version: "3.9"
-
 services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: skeleton-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-123456}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - skeleton-network
+
   app:
     build:
-      dockerfile: Dockerfile
       context: .
-    command: /bin/sh -c "while sleep 1000; do :; done"
+      target: test
+    container_name: skeleton-app
     environment:
       POSTGRES_HOST: postgres
-      POSTGRES_USERNAME: postgres
-      POSTGRES_PASSWORD: 123456
+      POSTGRES_USERNAME: ${POSTGRES_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-123456}
+      MIX_ENV: test
+    depends_on:
+      postgres:
+        condition: service_healthy
     volumes:
-      - .:/app:cached
-
-  postgres:
-    image: postgres:13.0
-    environment:
-      POSTGRES_PASSWORD: 123456
-    volumes:
-      - postgres_volume:/var/lib/postgresql/data
+      - .:/app
+      - deps:/app/deps
+      - build:/app/_build
+    networks:
+      - skeleton-network
 
 volumes:
-  postgres_volume:
+  postgres_data:
+  deps:
+  build:
+
+networks:
+  skeleton-network:

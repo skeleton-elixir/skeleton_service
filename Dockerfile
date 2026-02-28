@@ -1,12 +1,21 @@
-FROM elixir:1.11
-
-RUN apt-get -o Acquire::Max-FutureTime=86400 update -y
-RUN apt-get install -y inotify-tools
+FROM elixir:1.19-slim AS build
 
 WORKDIR /app
 
-COPY . .
+RUN mix local.hex --force && \
+    mix local.rebar --force
 
-RUN mix local.hex --force
-RUN mix local.rebar --force
+COPY mix.exs mix.lock ./
 RUN mix deps.get
+
+COPY config config
+COPY lib lib
+COPY priv priv
+
+RUN mix compile
+
+FROM build AS test
+
+COPY test test
+
+CMD ["mix", "test"]

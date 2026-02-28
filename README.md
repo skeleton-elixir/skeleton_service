@@ -1,181 +1,178 @@
-# Sobre o Skeleton Service
+# Skeleton Service
 
-O Skeleton Service é um facilitador para criação de serviços em sua aplicação.
-Um serviço nada mais é do que uma ação ou evento que sua aplicaçao executa, por exemplo: criar uma conta de usuário,
-atualizar perfil, login, logout etc.
+Biblioteca Elixir para criacao de servicos transacionais com `Ecto.Multi`. Encapsula logica de negocio em um pipeline composavel com suporte a tarefas diferidas (pos-commit).
 
-## Instalação e configuração
+## Instalacao
+
+Adicione ao `mix.exs`:
 
 ```elixir
-# mix.exs
-
 def deps do
   [
-    {:skeleton_service, "~> 3.1.0"}
+    {:skeleton_service, "~> 4.0"}
   ]
 end
 ```
 
+Configure o repo padrao:
+
 ```elixir
 # config/config.exs
-
-config :skeleton_service, repo: App.Repo # Default repo
+config :skeleton_service, repo: MyApp.Repo
 ```
 
-```elixir
-# lib/app/service.ex
+## Desenvolvimento local
 
-defmodule App.Service do
-  import App.Service
+### Sem Docker
+
+Requisitos: Elixir >= 1.15, PostgreSQL.
+
+```bash
+# Instalar dependencias
+mix deps.get
+
+# Rodar testes (cria e migra o banco automaticamente)
+mix test
+
+# Linter e formatacao
+mix credo
+mix format --check-formatted
+```
+
+Variaveis de ambiente para o banco (opcionais, tem defaults):
+
+| Variavel | Default |
+|----------|---------|
+| `POSTGRES_HOST` | `localhost` |
+| `POSTGRES_USERNAME` | `postgres` |
+| `POSTGRES_PASSWORD` | `123456` |
+
+### Com Docker
+
+```bash
+# Subir postgres + app
+docker compose up
+
+# Rodar testes no container
+docker compose run app mix test
+
+# Apenas o postgres (para rodar testes localmente)
+docker compose up postgres
+```
+
+## Uso
+
+### 1. Criar um service base (opcional)
+
+```elixir
+defmodule MyApp.Service do
+  import Skeleton.Service
 
   defmacro __using__(opts) do
     quote do
       use Skeleton.Service, unquote(opts)
 
-      import App.Service
+      import MyApp.Service
       import Ecto.{Changeset, Query}
 
-      alias App.Repo
+      alias MyApp.Repo
     end
   end
 
-  # You can create your own service functions
-  def my_custom_function(multi) do
-    run(multi, :info, fn _service ->
-      {:ok, "INFO"}
+  def add_metadata(multi) do
+    run(multi, :metadata, fn _service ->
+      {:ok, %{created_at: DateTime.utc_now()}}
     end)
   end
 end
 ```
 
-## Criando os serviços
+### 2. Criar um servico
 
 ```elixir
-# lib/app/accounts/user/user_create.ex
-
-defmodule App.Accounts.UserCreate do
-  use App.Service
-
-  alias App.User.Accounts
+defmodule MyApp.Accounts.UserCreate do
+  use MyApp.Service
 
   defstruct params: %{}
 
   def perform(%__MODULE__{} = service) do
     service
     |> begin_transaction()
-    |> run(:changeset, &changeset/1)
-    |> run(:user, &create_user/1)
-    |> my_custom_function()
+    |> run(:changeset, &build_changeset/1)
+    |> run(:user, &insert_user/1)
     |> commit_transaction()
-    |> run(&send_confirmation_code/1)
+    |> run(&send_welcome_email/1)
+    |> enqueue(&notify_admin/1)
     |> return(:user)
   end
 
-  # Changeset
-
-  defp changeset(service) do
+  defp build_changeset(service) do
     changeset =
-      %Accounts.User{}
-      |> cast(service.params, [:email])
-      |> validate_required([:email])
+      %MyApp.User{}
+      |> Ecto.Changeset.cast(service.params, [:name, :email])
+      |> Ecto.Changeset.validate_required([:name, :email])
 
     {:ok, changeset}
   end
 
-  # Create user
-
-  defp create_user(service) do
-    Repo.insert(service.changeset)
+  defp insert_user(service) do
+    MyApp.Repo.insert(service.changeset)
   end
 
-  # Send confirmation code
-
-  defp send_confirmation_code(service) do
-    Accounts.send_user_confirmation_code(service.user)
-  end
-end
-
-```
-
-```elixir
-# lib/app/accounts/user/user_update.ex
-
-defmodule App.Accounts.UserUpdate do
-  use App.Service, repo: App.Repo # Override the default Repo
-
-  alias App.Accounts
-
-  @enforce_keys [:user, :params]
-  defstruct user: nil, params: nil
-
-  def perform(%__MODULE__{} = service) do
-    service
-    |> begin_transaction()
-    |> run(:changeset, &changeset/1)
-    |> run(:updated_user, &update_user/1)
-    |> commit_transaction()
-    |> return(:updated_user)
+  # Executa imediatamente apos o commit (sincrono)
+  defp send_welcome_email(service) do
+    MyApp.Mailer.send_welcome(service.user)
   end
 
-  # Changeset
-
-  defp changeset(service) do
-    changeset =
-      service.user
-      |> cast(service.params, [:name])
-      |> validate_required([:name])
-
-    {:ok, changeset}
-  end
-
-  # Update User
-
-  defp update_user(service) do
-    Repo.update(service.changeset)
+  # Enfileirada no TaskQueue, executa quando `return/2` e chamado (diferida)
+  defp notify_admin(service) do
+    MyApp.Notifications.new_user(service.user)
   end
 end
 ```
 
-## Criando o contexto
+### 3. Chamar via contexto
 
 ```elixir
-# lib/app/accounts/accounts.ex
-
-defmodule App.Accounts do
-  alias App.Accounts
-
+defmodule MyApp.Accounts do
   def create_user(params) do
-    %Accounts.UserCreate{
-      params: params
-    }
-    |> Accounts.UserCreate.perform()
-  end
-
-  def update_user(user, params) do
-    %Accounts.UserUpdate{
-      user: user,
-      params: params
-    }
-    |> Accounts.UserUpdate.perform()
-  end
-
-  def send_user_confirmation_code(user) do
-    %UserSendConfirmationCode{
-      user: user
-    }
-    |> UserSendConfirmationCode.perform()
+    %MyApp.Accounts.UserCreate{params: params}
+    |> MyApp.Accounts.UserCreate.perform()
   end
 end
 ```
 
-## Exemplos de chamada dos serviços
+## Pipeline
 
-```elixir
-App.Accounts.create_user(%{
-  email: "email@example.com"
-})
+O pipeline de execucao segue esta ordem:
 
-App.Accounts.update_user(user, %{
-  name: "Updated name"
-})
 ```
+begin_transaction -> run/3 (dentro da transacao) -> commit_transaction -> run/2 (pos-commit) -> return
+```
+
+| Funcao | Descricao |
+|--------|-----------|
+| `begin_transaction/1` | Converte a struct em `Ecto.Multi` e inicia o `TaskQueue` |
+| `run/3` | Adiciona um passo nomeado ao `Ecto.Multi` (dentro da transacao) |
+| `commit_transaction/1` | Executa o `Ecto.Multi` via `Repo.transaction/2` |
+| `run/2` | Executa funcao **imediatamente** apos o commit (sincrono) |
+| `enqueue/2` | Enfileira tarefa no `TaskQueue`, executada quando `return/2` e chamado (diferida) |
+| `return/2` | Extrai resultado nomeado e executa tarefas enfileiradas |
+
+## Comandos uteis
+
+```bash
+mix deps.get                    # Instalar dependencias
+mix compile                     # Compilar
+mix test                        # Rodar testes
+mix test path/to/test.exs       # Rodar arquivo especifico
+mix test path/to/test.exs:10    # Rodar teste por linha
+mix credo                       # Linter
+mix format                      # Formatar codigo
+mix format --check-formatted    # Verificar formatacao
+mix docs                        # Gerar documentacao
+```
+
+## Licenca
+
+MIT
