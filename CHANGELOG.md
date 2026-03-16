@@ -1,3 +1,22 @@
+5.0.0
+------
+#### Breaking
+* TaskQueue Agent eliminado — tarefas enfileiradas agora sao armazenadas em fila no process dictionary, compartilhada entre servicos encadeados
+* Campos da struct consolidados em um unico step `:__input__` no `Ecto.Multi` (antes era um step por campo)
+* Callbacks de steps `run/3` agora recebem map com `merge_input` (campos da struct + resultados anteriores, sem chaves internas)
+
+#### Features
+* `validate/2` — valida input antes de abrir conexao com o banco; retorna `{:error, reason}` sem tocar no DB
+* Hooks `c_before_transaction/1` e `c_after_transaction/1` — callbacks sobrescreviveis para logging, audit, etc.
+* Telemetry — eventos emitidos em `[:skeleton, :service, :begin]`, `[:skeleton, :service, :commit]`, `[:skeleton, :service, :stop]`
+* `@enforce_keys` guidance — warning em compile-time se struct nao define `@enforce_keys`
+* Servicos encadeados: A chama B chama C — todos enqueues sao executados somente no `return/2` do servico raiz (A)
+
+#### Changes
+* Adicionada dependencia `{:telemetry, "~> 1.0"}`
+* `Skeleton.Service.TaskQueue` removido
+* Error pass-through (`{:error, _}`) em todas as funcoes do pipeline para suportar `validate/2`
+
 4.0.0
 ------
 #### Breaking

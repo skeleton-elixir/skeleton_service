@@ -1,7 +1,7 @@
 defmodule SkeletonService.MixProject do
   use Mix.Project
 
-  @version "4.0.0"
+  @version "5.0.0"
   @source_url "https://github.com/skeleton-elixir/skeleton_service"
   @maintainers [
     "Diego Nogueira",
@@ -37,6 +37,7 @@ defmodule SkeletonService.MixProject do
     [
       {:ex_doc, "~> 0.34", only: :dev, runtime: false},
       {:ecto_sql, "~> 3.12"},
+      {:telemetry, "~> 1.0"},
       {:postgrex, "~> 0.19", only: :test},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
     ]

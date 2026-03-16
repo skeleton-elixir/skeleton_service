@@ -28,20 +28,34 @@ Requer PostgreSQL. Configure via variaveis de ambiente: `POSTGRES_HOST`, `POSTGR
 Servicos sao structs que implementam uma funcao `perform/1` seguindo este pipeline:
 
 ```
-begin_transaction -> run (dentro da transacao) -> commit_transaction -> run (pos-commit) -> return
+validate -> begin_transaction -> run (dentro da transacao) -> commit_transaction -> run (pos-commit) -> enqueue -> return
 ```
 
-- **`begin_transaction/1`** — Converte a struct do servico em um `Ecto.Multi`, inicia um agent `TaskQueue` para trabalho diferido
-- **`run/3`** (nomeado) — Adiciona um passo nomeado ao `Ecto.Multi` (executa dentro da transacao do banco)
+- **`validate/2`** — Valida input antes de abrir conexao com o banco. Retorna struct ou `{:error, reason}`
+- **`begin_transaction/1`** — Converte a struct do servico em um `Ecto.Multi` com step `:__input__` (campos da struct) e `:__meta__` (telemetria). Inicializa fila de tarefas no process dictionary se ainda nao existir
+- **`run/3`** (nomeado) — Adiciona um passo nomeado ao `Ecto.Multi` (executa dentro da transacao do banco). Callback recebe `merge_input(changes)` (campos da struct + resultados anteriores)
 - **`run/2`** (funcional) — Executa uma funcao fora da transacao (efeitos colaterais pos-commit), envolvida em `try/rescue`
-- **`enqueue/2`** — Enfileira uma tarefa para executar apos commit bem-sucedido via agent TaskQueue
-- **`commit_transaction/2`** — Executa o `Ecto.Multi` via `Repo.transaction/2`
-- **`return/2`** — Extrai um resultado nomeado; em caso de sucesso executa as tarefas enfileiradas, em caso de falha para a fila e loga warning
+- **`enqueue/2`** — Enfileira uma tarefa para executar apos commit bem-sucedido. Tarefas acumulam no process dictionary, compartilhadas entre servicos encadeados
+- **`commit_transaction/2`** — Executa o `Ecto.Multi` via `Repo.transaction/2`. Emite evento telemetry
+- **`return/2`** — Extrai um resultado nomeado; em caso de sucesso executa as tarefas enfileiradas (se for o servico raiz), em caso de falha limpa a fila e loga warning
+- **`c_before_transaction/1`** — Hook overridable chamado antes de `begin_transaction`. Default: no-op
+- **`c_after_transaction/1`** — Hook overridable chamado apos `return`. Default: no-op
+
+### Servicos Encadeados
+
+Quando A chama B chama C, a fila de tarefas e compartilhada via process dictionary. Somente A (o servico que iniciou a fila) executa todas as tarefas no seu `return/2`. B e C enfileiram mas nao executam.
+
+### Error Pass-through
+
+Todas as funcoes do pipeline possuem clausulas `{:error, _}` pass-through, permitindo que `validate/2` curto-circuite o pipeline inteiro sem abrir conexao com o banco.
+
+### Telemetry
+
+Eventos emitidos: `[:skeleton, :service, :begin]`, `[:skeleton, :service, :commit]`, `[:skeleton, :service, :stop]`. Metadata inclui `module` e `status`.
 
 ### Modulos Principais
 
-- **`Skeleton.Service`** (`lib/skeleton/service.ex`) — Macro principal e funcoes do pipeline. `use Skeleton.Service` injeta transaction/run/enqueue/return no modulo consumidor.
-- **`Skeleton.Service.TaskQueue`** (`lib/skeleton/service/task_queue.ex`) — Fila baseada em Agent para tarefas diferidas. Usa nomenclatura global com tupla `{__MODULE__, self()}`. Tarefas sao enfileiradas com prepend O(1) e executadas em ordem FIFO. Cada tarefa e envolvida em `try/rescue` para resiliencia.
+- **`Skeleton.Service`** (`lib/skeleton/service.ex`) — Macro principal e funcoes do pipeline. `use Skeleton.Service` injeta validate/transaction/run/enqueue/return/hooks no modulo consumidor.
 - **`Skeleton.Service.Config`** (`lib/skeleton/service/config.ex`) — Le o repo e outras configuracoes do application env (`:skeleton_service`).
 
 ### Configuracao
@@ -56,4 +70,4 @@ O repo padrao e definido na config da aplicacao (`config :skeleton_service, repo
 
 ### Setup de Testes
 
-Os testes usam um `Skeleton.Service.TestCase` customizado (em `test_helper.exs`) com Ecto SQL Sandbox para isolamento do banco. Modulos de suporte para testes (schema, repo, servicos de exemplo) ficam em `test/skeleton/app/`. Atualmente 23 testes cobrindo TaskQueue, Config e Service.
+Os testes usam um `Skeleton.Service.TestCase` customizado (em `test_helper.exs`) com Ecto SQL Sandbox para isolamento do banco. Modulos de suporte para testes (schema, repo, servicos de exemplo) ficam em `test/skeleton/app/`.

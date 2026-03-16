@@ -5,6 +5,7 @@ defmodule Skeleton.App.UserCreate do
 
   alias Skeleton.App.User
 
+  @enforce_keys [:params]
   defstruct params: %{}
 
   def perform(%__MODULE__{} = service) do
